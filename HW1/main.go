@@ -26,6 +26,7 @@ func rpcServer(mySlice IntSlice) {
 		fmt.Println("Unable to connect to listener")
 		return
 	}
+	startTime := time.Now().UnixMilli()
 	for {
 		conn, err := l.Accept()
 		if err != nil {
@@ -34,6 +35,8 @@ func rpcServer(mySlice IntSlice) {
 		}
 		rpc.ServeConn(conn) //note that this uses gob behind the scenes
 	}
+	endTime := time.Now().UnixMilli()
+	fmt.Printf("This took %d milliseconds for the rpcServer\n", endTime-startTime)
 }
 
 func rpcClient() {
@@ -52,7 +55,7 @@ func rpcClient() {
 		return
 	}
 	endTime := time.Now().UnixMilli()
-	fmt.Printf("This took %d milliseconds", endTime-startTime)
+	fmt.Printf("This took %d milliseconds for the rpcClient\n", endTime-startTime)
 }
 
 func gobServer(mySlice IntSlice) {
@@ -62,7 +65,7 @@ func gobServer(mySlice IntSlice) {
 		fmt.Println("Unable to connect to listener")
 		return
 	}
-
+	startTime := time.Now().UnixMilli()
 	for {
 		conn, err := l.Accept()
 		if err != nil {
@@ -72,6 +75,8 @@ func gobServer(mySlice IntSlice) {
 		encoder := gob.NewEncoder(conn)
 		encoder.Encode(mySlice)
 	}
+	endTime := time.Now().UnixMilli()
+	fmt.Printf("This took %d milliseconds with printing in gobClient\n", endTime-startTime)
 }
 
 func gobClient() {
@@ -90,7 +95,7 @@ func gobClient() {
 		return
 	}
 	endTime := time.Now().UnixMilli()
-	fmt.Printf("This took %d milliseconds", endTime-startTime)
+	fmt.Printf("This took %d milliseconds use gobClient\n", endTime-startTime)
 }
 
 func localfileServer(mySlice IntSlice) {
@@ -104,7 +109,7 @@ func localfileServer(mySlice IntSlice) {
 	encoder := gob.NewEncoder(file)
 	encoder.Encode(mySlice)
 	endTime := time.Now().UnixMilli()
-	fmt.Printf("This took %d milliseconds", endTime-startTime)
+	fmt.Printf("This took %d milliseconds via localfileServer", endTime-startTime)
 }
 
 func localfileClient() {
@@ -124,7 +129,7 @@ func localfileClient() {
 		return
 	}
 	endTime := time.Now().UnixMilli()
-	fmt.Printf("This took %d milliseconds", endTime-startTime)
+	fmt.Printf("This took %d milliseconds via local fileClient\n", endTime-startTime)
 }
 
 func main() {
@@ -154,7 +159,7 @@ func main() {
 			localfileServer(mySlice)
 		}
 	} else if os.Args[2] == "send" {
-		startTime := time.Now().UnixMilli()
+		//startTime := time.Now().UnixMilli()
 		switch num {
 		case 1:
 			rpcClient()
@@ -163,7 +168,7 @@ func main() {
 		case 3:
 			localfileClient()
 		}
-		endTime := time.Now().UnixMilli()
-		fmt.Printf("This took %d milliseconds", endTime-startTime)
+		/*endTime := time.Now().UnixMilli()
+		fmt.Printf("This took %d milliseconds fucking main\n", endTime-startTime)*/
 	}
 }
