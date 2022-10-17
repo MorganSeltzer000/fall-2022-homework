@@ -146,15 +146,16 @@ func main() {
 		fmt.Println("Incorrect format: 2nd arg should be either send or listen")
 		return
 	}
+	value := os.Args[2]
 	max := math.MaxInt
-	currentNumbers := 100000 //This is the minimum number we want to start testing
+	currentNumbers := 1000 //This is the minimum number we want to start testing
 	for j := 1; j < 10; j++ {
 		currentNumbers = int(math.Min(float64(currentNumbers*2), float64(max)))
 		var mySlice IntSlice = make([]int, currentNumbers, currentNumbers)
 		for i := 0; i < len(mySlice); i++ {
 			mySlice[i] = i + i%10 //just to avoid any potential trivial encodings
 		}
-		if os.Args[2] == "listen" {
+		if value == "listen" {
 			switch num {
 			case 1:
 				rpcServer(mySlice, currentNumbers)
@@ -163,7 +164,7 @@ func main() {
 			case 3:
 				localfileServer(mySlice, currentNumbers)
 			}
-		} else if os.Args[2] == "send" {
+		} else if value == "send" {
 			//startTime := time.Now().UnixMilli()
 			switch num {
 			case 1:
