@@ -22,7 +22,8 @@ func (mySlice IntSlice) Values(ignore int, sameSlice *IntSlice) error {
 }
 
 func rpcServer(mySlice IntSlice, number int) {
-	rpc.Register(mySlice)
+	tmpServer := rpc.NewServer()
+	tmpServer.Register(mySlice)
 	l, err := net.Listen("tcp", ":"+rpcPort)
 	if err != nil {
 		fmt.Println("Unable to connect to listener")
@@ -34,13 +35,13 @@ func rpcServer(mySlice IntSlice, number int) {
 		return
 	}
 	startTime := time.Now().UnixMilli()
-	rpc.ServeConn(conn) //note that this uses gob behind the scenes
+	tmpServer.ServeConn(conn) //note that this uses gob behind the scenes
 	endTime := time.Now().UnixMilli()
 	fmt.Printf("Sending %d numbers took %d milliseconds for the rpcServer\n", number, endTime-startTime)
 }
 
 func rpcClient(number int) {
-	var mySlice IntSlice
+	var mySlice IntSlice = make([]int, number, number)
 	client, err := rpc.Dial("tcp", "127.0.0.1:"+rpcPort)
 	defer client.Close()
 	if err != nil {
@@ -90,7 +91,6 @@ func gobClient(number int) {
 	startTime := time.Now().UnixMilli()
 	err = decoder.Decode(&mySlice)
 	if err != nil {
-		fmt.Println("Unable to receive data")
 		fmt.Println(err)
 		return
 	}
@@ -100,7 +100,7 @@ func gobClient(number int) {
 
 func localfileServer(mySlice IntSlice, number int) {
 	startTime := time.Now().UnixMilli()
-	file, err := os.Create(os.TempDir() + "/hw1_file" + string(number))
+	file, err := os.Create(os.TempDir() + "/hw1_file" + strconv.Itoa(number))
 	if err != nil {
 		fmt.Println("Failed to open file")
 		return
@@ -117,8 +117,9 @@ func localfileClient(number int) {
 	var err error = errors.New("")
 	var file *os.File
 	//waiting until the file is created to read it
+	//of course, it could end up reading it when it's in the middle of being written
 	for err != nil {
-		file, err = os.Open(os.TempDir() + "/hw1_file" + string(number))
+		file, err = os.Open(os.TempDir() + "/hw1_file" + strconv.Itoa(number))
 		if err != nil {
 			continue
 		}
