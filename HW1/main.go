@@ -27,15 +27,13 @@ func rpcServer(mySlice IntSlice, number int) {
 		fmt.Println("Unable to connect to listener")
 		return
 	}
-	startTime := time.Now().UnixMilli()
-	for {
-		conn, err := l.Accept()
-		if err != nil {
-			fmt.Println("Unable to accept connection")
-			return
-		}
-		rpc.ServeConn(conn) //note that this uses gob behind the scenes
+	conn, err := l.Accept()
+	if err != nil {
+		fmt.Println("Unable to accept connection")
+		return
 	}
+	startTime := time.Now().UnixMilli()
+	rpc.ServeConn(conn) //note that this uses gob behind the scenes
 	endTime := time.Now().UnixMilli()
 	fmt.Printf("Sending %d numbers took %d milliseconds for the rpcServer\n", number, endTime-startTime)
 }
@@ -67,16 +65,14 @@ func gobServer(mySlice IntSlice, number int) {
 		fmt.Println("Unable to connect to listener")
 		return
 	}
-	startTime := time.Now().UnixMilli()
-	for {
-		conn, err := l.Accept()
-		if err != nil {
-			fmt.Println("Unable to accept connection")
-			return
-		}
-		encoder := gob.NewEncoder(conn)
-		encoder.Encode(mySlice)
+	conn, err := l.Accept()
+	if err != nil {
+		fmt.Println("Unable to accept connection")
+		return
 	}
+	startTime := time.Now().UnixMilli()
+	encoder := gob.NewEncoder(conn)
+	encoder.Encode(mySlice)
 	endTime := time.Now().UnixMilli()
 	fmt.Printf("Sending %d numbers took %d milliseconds with printing in gobClient\n", number, endTime-startTime)
 }
@@ -93,7 +89,7 @@ func gobClient(number int) {
 	startTime := time.Now().UnixMilli()
 	err = decoder.Decode(&mySlice)
 	if err != nil {
-		fmt.Println("Unable to receieve data")
+		fmt.Println("Unable to receive data")
 		fmt.Println(err)
 		return
 	}
@@ -150,7 +146,7 @@ func main() {
 	}
 	value := os.Args[2]
 	max := math.MaxInt
-	currentNumbers := 1000 //This is the minimum number we want to start testing
+	currentNumbers := 1000000 //This is the minimum number we want to start testing
 	for j := 1; j < 10; j++ {
 		currentNumbers = int(math.Min(float64(currentNumbers*2), float64(max)))
 		var mySlice IntSlice = make([]int, currentNumbers, currentNumbers)
