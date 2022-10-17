@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/gob"
 	"fmt"
+	"math"
 	"net"
 	"net/rpc"
 	"os"
@@ -19,7 +20,7 @@ func (mySlice IntSlice) Values(ignore int, sameSlice *IntSlice) error {
 	return nil
 }
 
-func rpcServer(mySlice IntSlice) {
+func rpcServer(mySlice IntSlice, number int) {
 	rpc.Register(mySlice)
 	l, err := net.Listen("tcp", ":"+rpcPort)
 	if err != nil {
@@ -36,10 +37,10 @@ func rpcServer(mySlice IntSlice) {
 		rpc.ServeConn(conn) //note that this uses gob behind the scenes
 	}
 	endTime := time.Now().UnixMilli()
-	fmt.Printf("This took %d milliseconds for the rpcServer\n", endTime-startTime)
+	fmt.Printf("Sending %d numbers took %d milliseconds for the rpcServer\n", number, endTime-startTime)
 }
 
-func rpcClient() {
+func rpcClient(number int) {
 	var mySlice IntSlice
 	client, err := rpc.Dial("tcp", "127.0.0.1:"+rpcPort)
 	if err != nil {
@@ -55,10 +56,10 @@ func rpcClient() {
 		return
 	}
 	endTime := time.Now().UnixMilli()
-	fmt.Printf("This took %d milliseconds for the rpcClient\n", endTime-startTime)
+	fmt.Printf("Sending %d numbers took %d milliseconds for the rpcClient\n", number, endTime-startTime)
 }
 
-func gobServer(mySlice IntSlice) {
+func gobServer(mySlice IntSlice, number int) {
 	rpc.Register(mySlice)
 	l, err := net.Listen("tcp", ":"+rpcPort)
 	if err != nil {
@@ -76,10 +77,10 @@ func gobServer(mySlice IntSlice) {
 		encoder.Encode(mySlice)
 	}
 	endTime := time.Now().UnixMilli()
-	fmt.Printf("This took %d milliseconds with printing in gobClient\n", endTime-startTime)
+	fmt.Printf("Sending %d numbers took %d milliseconds with printing in gobClient\n", number, endTime-startTime)
 }
 
-func gobClient() {
+func gobClient(number int) {
 	var mySlice IntSlice
 	client, err := net.Dial("tcp", "127.0.0.1:"+rpcPort)
 	if err != nil {
@@ -95,10 +96,10 @@ func gobClient() {
 		return
 	}
 	endTime := time.Now().UnixMilli()
-	fmt.Printf("This took %d milliseconds use gobClient\n", endTime-startTime)
+	fmt.Printf("Sending %d numbers took %d milliseconds use gobClient\n", number, endTime-startTime)
 }
 
-func localfileServer(mySlice IntSlice) {
+func localfileServer(mySlice IntSlice, number int) {
 	startTime := time.Now().UnixMilli()
 	file, err := os.Create(os.TempDir() + "/hw1_file")
 	if err != nil {
@@ -109,10 +110,10 @@ func localfileServer(mySlice IntSlice) {
 	encoder := gob.NewEncoder(file)
 	encoder.Encode(mySlice)
 	endTime := time.Now().UnixMilli()
-	fmt.Printf("This took %d milliseconds via localfileServer", endTime-startTime)
+	fmt.Printf("Sending %d numbers took %d milliseconds via localfileServer", number, endTime-startTime)
 }
 
-func localfileClient() {
+func localfileClient(number int) {
 	startTime := time.Now().UnixMilli()
 	var mySlice IntSlice
 	file, err := os.Open(os.TempDir() + "/hw1_file")
@@ -129,7 +130,7 @@ func localfileClient() {
 		return
 	}
 	endTime := time.Now().UnixMilli()
-	fmt.Printf("This took %d milliseconds via local fileClient\n", endTime-startTime)
+	fmt.Printf("Sending %d numbers took %d milliseconds via local fileClient\n", number, endTime-startTime)
 }
 
 func main() {
@@ -145,30 +146,33 @@ func main() {
 		fmt.Println("Incorrect format: 2nd arg should be either send or listen")
 		return
 	}
-	var mySlice IntSlice = make([]int, 1000000, 1000000)
-	for i := 0; i < len(mySlice); i++ {
-		mySlice[i] = i + i%10 //just to avoid any potential trivial encodings
-	}
-	if os.Args[2] == "listen" {
-		switch num {
-		case 1:
-			rpcServer(mySlice)
-		case 2:
-			gobServer(mySlice)
-		case 3:
-			localfileServer(mySlice)
+	max := math.MaxInt
+	currentNumbers := 100000 //This is the minimum number we want to start testing
+	for j := 1; j < 10; j++ {
+		currentNumbers = int(math.Min(float64(currentNumbers*2), float64(max)))
+		var mySlice IntSlice = make([]int, currentNumbers, currentNumbers)
+		for i := 0; i < len(mySlice); i++ {
+			mySlice[i] = i + i%10 //just to avoid any potential trivial encodings
 		}
-	} else if os.Args[2] == "send" {
-		//startTime := time.Now().UnixMilli()
-		switch num {
-		case 1:
-			rpcClient()
-		case 2:
-			gobClient()
-		case 3:
-			localfileClient()
+		if os.Args[2] == "listen" {
+			switch num {
+			case 1:
+				rpcServer(mySlice, currentNumbers)
+			case 2:
+				gobServer(mySlice, currentNumbers)
+			case 3:
+				localfileServer(mySlice, currentNumbers)
+			}
+		} else if os.Args[2] == "send" {
+			//startTime := time.Now().UnixMilli()
+			switch num {
+			case 1:
+				rpcClient(currentNumbers)
+			case 2:
+				gobClient(currentNumbers)
+			case 3:
+				localfileClient(currentNumbers)
+			}
 		}
-		/*endTime := time.Now().UnixMilli()
-		fmt.Printf("This took %d milliseconds fucking main\n", endTime-startTime)*/
 	}
 }
