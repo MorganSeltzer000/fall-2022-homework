@@ -43,6 +43,7 @@ func rpcServer(mySlice IntSlice, number int) {
 func rpcClient(number int) {
 	var mySlice IntSlice
 	client, err := rpc.Dial("tcp", "127.0.0.1:"+rpcPort)
+	defer client.Close()
 	if err != nil {
 		fmt.Println("Unable to connect to server")
 		return
@@ -83,6 +84,7 @@ func gobServer(mySlice IntSlice, number int) {
 func gobClient(number int) {
 	var mySlice IntSlice
 	client, err := net.Dial("tcp", "127.0.0.1:"+rpcPort)
+	defer client.Close()
 	if err != nil {
 		fmt.Println("Unable to connect to server")
 		return
