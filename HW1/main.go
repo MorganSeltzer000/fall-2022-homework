@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"math"
 	"net"
@@ -55,7 +56,7 @@ func rpcClient(number int) {
 		return
 	}
 	endTime := time.Now().UnixMilli()
-	fmt.Printf("Sending %d numbers took %d milliseconds for the rpcClient\n", number, endTime-startTime)
+	fmt.Printf("Receiving %d numbers took %d milliseconds for the rpcClient\n", number, endTime-startTime)
 }
 
 func gobServer(mySlice IntSlice, number int) {
@@ -94,12 +95,12 @@ func gobClient(number int) {
 		return
 	}
 	endTime := time.Now().UnixMilli()
-	fmt.Printf("Sending %d numbers took %d milliseconds use gobClient\n", number, endTime-startTime)
+	fmt.Printf("Receiving %d numbers took %d milliseconds use gobClient\n", number, endTime-startTime)
 }
 
 func localfileServer(mySlice IntSlice, number int) {
 	startTime := time.Now().UnixMilli()
-	file, err := os.Create(os.TempDir() + "/hw1_file")
+	file, err := os.Create(os.TempDir() + "/hw1_file" + string(number))
 	if err != nil {
 		fmt.Println("Failed to open file")
 		return
@@ -108,17 +109,21 @@ func localfileServer(mySlice IntSlice, number int) {
 	encoder := gob.NewEncoder(file)
 	encoder.Encode(mySlice)
 	endTime := time.Now().UnixMilli()
-	fmt.Printf("Sending %d numbers took %d milliseconds via localfileServer", number, endTime-startTime)
+	fmt.Printf("Sending %d numbers took %d milliseconds via localfileServer\n", number, endTime-startTime)
 }
 
 func localfileClient(number int) {
-	startTime := time.Now().UnixMilli()
 	var mySlice IntSlice
-	file, err := os.Open(os.TempDir() + "/hw1_file")
-	if err != nil {
-		fmt.Println("Failed to open file")
-		return
+	var err error = errors.New("")
+	var file *os.File
+	//waiting until the file is created to read it
+	for err != nil {
+		file, err = os.Open(os.TempDir() + "/hw1_file" + string(number))
+		if err != nil {
+			continue
+		}
 	}
+	startTime := time.Now().UnixMilli()
 	defer file.Close()
 	decoder := gob.NewDecoder(file)
 	err = decoder.Decode(&mySlice)
@@ -128,7 +133,7 @@ func localfileClient(number int) {
 		return
 	}
 	endTime := time.Now().UnixMilli()
-	fmt.Printf("Sending %d numbers took %d milliseconds via local fileClient\n", number, endTime-startTime)
+	fmt.Printf("Receiving %d numbers took %d milliseconds via local fileClient\n", number, endTime-startTime)
 }
 
 func main() {
@@ -146,14 +151,14 @@ func main() {
 	}
 	value := os.Args[2]
 	max := math.MaxInt
-	currentNumbers := 1000000 //This is the minimum number we want to start testing
+	currentNumbers := 100000 //This is the minimum number we want to start testing
 	for j := 1; j < 10; j++ {
 		currentNumbers = int(math.Min(float64(currentNumbers*2), float64(max)))
 		var mySlice IntSlice = make([]int, currentNumbers, currentNumbers)
 		for i := 0; i < len(mySlice); i++ {
 			mySlice[i] = i + i%10 //just to avoid any potential trivial encodings
 		}
-		if value == "listen" {
+		if value == "send" {
 			switch num {
 			case 1:
 				rpcServer(mySlice, currentNumbers)
@@ -162,7 +167,7 @@ func main() {
 			case 3:
 				localfileServer(mySlice, currentNumbers)
 			}
-		} else if value == "send" {
+		} else if value == "listen" {
 			//startTime := time.Now().UnixMilli()
 			switch num {
 			case 1:
